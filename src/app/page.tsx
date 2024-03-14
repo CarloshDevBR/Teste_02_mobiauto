@@ -1,95 +1,154 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
 
-export default function Home() {
+import { useEffect } from 'react';
+
+import { MenuItem, SelectChangeEvent, TextField } from '@mui/material';
+
+import { Autocomplete, Button, Dropdown, Paragraph, RenderIf } from '@/components';
+
+import { useGetAllSequentialDataFipe } from '@/hook/useGetAllSequentialDataFipe';
+
+import { ACTIONS, useFormFipe } from '@/hook/useFormFipe';
+
+import { Fipe } from '@/types';
+
+import { useRouter } from 'next/navigation';
+
+import { HomePage } from './styles';
+
+import { useFipe } from '@/context/fipe';
+
+export default function HomeForm() {
+  const { state, completed, dispatch } = useFormFipe();
+
+  const navigate = useRouter();
+
+  const { setFipeData } = useFipe();
+
+  const {
+    dataBrands,
+    isLoadingBrands,
+    dataModels,
+    isLoadingModels,
+    dataYears,
+    isLoadingYears,
+    getBrands,
+    getModels,
+    getYears,
+  } = useGetAllSequentialDataFipe();
+
+  const handleSelectBrand = (_: React.SyntheticEvent<Element, Event>, value: Fipe | null) => {
+    dispatch({ type: ACTIONS.SET_BRAND, payload: value?.codigo || '' });
+
+    if (state.model || state.year) {
+      dispatch({ type: ACTIONS.SET_MODEL, payload: '' });
+
+      dispatch({ type: ACTIONS.SET_YEAR, payload: '' });
+    }
+
+    if (value) return getModels(value.codigo);
+  };
+
+  const handleSelectModels = (_: React.SyntheticEvent<Element, Event>, value: Fipe | null) => {
+    dispatch({ type: ACTIONS.SET_MODEL, payload: value?.codigo || '' });
+
+    if (state.year) {
+      dispatch({ type: ACTIONS.SET_YEAR, payload: '' });
+    }
+
+    if (value) return getYears(state.brand, value.codigo);
+  };
+
+  const handleSelectYears = (value: SelectChangeEvent<unknown>) => {
+    dispatch({ type: ACTIONS.SET_YEAR, payload: value.target.value as string });
+  };
+
+  const handleNavigationDetails = () => {
+    setFipeData(state);
+
+    navigate.push('/details');
+  };
+
+  useEffect(() => {
+    if (!dataBrands) {
+      getBrands();
+    }
+  }, []);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <HomePage.Main>
+      <HomePage.Section>
+        <HomePage.ContainerText>
+          <Paragraph
+            style={{
+              fontSize: '1.875rem',
+              lineHeight: '2.25rem',
+              textAlign: 'center',
+              marginBottom: '0.5rem',
+            }}
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
+            Tabela Fipe
+          </Paragraph>
+
+          <Paragraph
+            style={{
+              fontSize: '1.25rem',
+              lineHeight: '1.75rem',
+              textAlign: 'center',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Consulte o valor de um veículo de forma gratuita
+          </Paragraph>
+        </HomePage.ContainerText>
+
+        <HomePage.Form>
+          <Autocomplete
+            options={dataBrands || []}
+            getOptionLabel={(item) => item.nome}
+            onChange={handleSelectBrand}
+            renderInput={(params) => <TextField {...params} label="Marca" />}
+            loading={isLoadingBrands}
+            disabled={isLoadingBrands}
+          />
+
+          <Autocomplete
+            options={dataModels || []}
+            getOptionLabel={(item) => item.nome}
+            onChange={handleSelectModels}
+            renderInput={(params) => <TextField {...params} label="Modelo" />}
+            loading={isLoadingModels}
+            disabled={!state.brand}
+          />
+
+          <RenderIf conditional={Boolean(state.brand && state.model)}>
+            <Dropdown
+              label="Ano"
+              data={dataYears || []}
+              renderMenuItem={(item) => (
+                <MenuItem key={item.codigo} value={item.codigo}>
+                  {item.nome}
+                </MenuItem>
+              )}
+              onChange={handleSelectYears}
+              disabled={!state.model}
+              variant="outlined"
+              isLoading={isLoadingYears}
             />
-          </a>
-        </div>
-      </div>
+          </RenderIf>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+          <Button
+            onClick={handleNavigationDetails}
+            disabled={!completed}
+            variant="contained"
+            sx={{
+              mt: 1,
+            }}
+          >
+            Consultar preço
+          </Button>
+        </HomePage.Form>
+      </HomePage.Section>
+    </HomePage.Main>
   );
 }
